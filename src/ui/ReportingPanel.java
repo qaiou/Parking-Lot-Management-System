@@ -16,15 +16,15 @@ public class ReportingPanel extends JPanel {
 
         // -------- Tabs --------
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Current Vehicles", createVehicleReport());
-        tabs.addTab("Revenue Report", createRevenueReport());
-        tabs.addTab("Occupancy Report", createOccupancyReport());
-        tabs.addTab("Fine Report", createFineReport());
+        tabs.addTab("Current Vehicles", vehicleReport());
+        tabs.addTab("Revenue Report", revenueReport());
+        tabs.addTab("Occupancy Report", occupancyReport());
+        tabs.addTab("Fine Report", fineReport());
 
         add(tabs, BorderLayout.CENTER);
     }
 
-    private JPanel createVehicleReport() {
+    private JPanel vehicleReport() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Vehicles Currently Parked"));
 
@@ -40,7 +40,7 @@ public class ReportingPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createRevenueReport() {
+    private JPanel revenueReport() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Revenue Report"));
 
@@ -55,7 +55,7 @@ public class ReportingPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createOccupancyReport() {
+    private JPanel occupancyReport() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Occupancy Report"));
 
@@ -72,13 +72,13 @@ public class ReportingPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createFineReport() {
+    private JPanel fineReport() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Outstanding Fine Report"));
 
         JTable table = new JTable(
                 new Object[][]{},
-                new String[]{"License Plate", "Fine Amount", "Reason", "Status"}
+                new String[]{"License Plate", "Fine Amount", "Reason"}
         );
 
         JButton btnRefresh = new JButton("Refresh");
