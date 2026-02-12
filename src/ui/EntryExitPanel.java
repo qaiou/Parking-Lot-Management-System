@@ -8,6 +8,7 @@ import java.util.Random;
 public class EntryExitPanel extends JPanel {
 
     private JPanel resultPanel;
+    private JTextField entryPlate, exitPlate;
 
     public EntryExitPanel() {
         setLayout(new BorderLayout(15, 15));
@@ -18,21 +19,21 @@ public class EntryExitPanel extends JPanel {
         add(title, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Vehicle Entry", createEntryPanel());
-        tabs.addTab("Vehicle Exit", createExitPanel());
+        tabs.addTab("Vehicle Entry", entryPanel());
+        tabs.addTab("Vehicle Exit", exitPanel());
 
         add(tabs, BorderLayout.CENTER);
     }
 
     // ---------------- ENTRY ----------------
-    private JPanel createEntryPanel() {
+    private JPanel entryPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel form = new JPanel(new GridLayout(5, 2, 10, 10));
         form.setBorder(new TitledBorder("Vehicle Entry"));
 
-        JTextField txtPlate = new JTextField();
+        entryPlate = new JTextField();
         JComboBox<String> vehicleTypeBox = new JComboBox<>(new String[]{
                 "Motorcycle", "Car", "SUV/Truck", "Handicapped Vehicle"
         });
@@ -43,7 +44,7 @@ public class EntryExitPanel extends JPanel {
         JButton btnSearch = new JButton("Show Available Spots");
 
         form.add(new JLabel("License Plate:"));
-        form.add(txtPlate);
+        form.add(entryPlate);
         form.add(new JLabel("Vehicle Type:"));
         form.add(vehicleTypeBox);
         form.add(new JLabel("Preferred Spot Type:"));
@@ -92,7 +93,7 @@ public class EntryExitPanel extends JPanel {
 
                 for (int spot = 1; spot <= 6; spot++) {
                     String id = "F" + floor + "-R" + (rowIndex + 1) + "-S" + spot;
-                    JButton b = createSpotBox(id, rowTypes[rowIndex], rates[rowIndex], true);
+                    JButton b = spotBox(id, rowTypes[rowIndex], rates[rowIndex], true);
                     rowPanel.add(b);
                 }
 
@@ -113,14 +114,14 @@ public class EntryExitPanel extends JPanel {
     }
 
     // ---------------- EXIT ----------------
-    private JPanel createExitPanel() {
+    private JPanel exitPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel form = new JPanel(new GridLayout(5, 2, 10, 10));
         form.setBorder(new TitledBorder("Vehicle Exit"));
 
-        JTextField txtPlate = new JTextField();
+        exitPlate = new JTextField();
         JComboBox<String> paymentMethodBox = new JComboBox<>(new String[]{
                 "Cash", "Card"
         });
@@ -131,7 +132,7 @@ public class EntryExitPanel extends JPanel {
         JButton btnPay = new JButton("Process Payment");
 
         form.add(new JLabel("License Plate:"));
-        form.add(txtPlate);
+        form.add(exitPlate);
         form.add(new JLabel("Payment Method:"));
         form.add(paymentMethodBox);
         form.add(new JLabel("Cash Amount (RM):"));
@@ -154,7 +155,7 @@ public class EntryExitPanel extends JPanel {
     }
 
     // ---------------- SPOT BUTTON ----------------
-    private JButton createSpotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
+    private JButton spotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
 
         JButton spot = new JButton();
         spot.setLayout(new GridLayout(4, 1));
@@ -167,22 +168,55 @@ public class EntryExitPanel extends JPanel {
 
         JLabel l1 = new JLabel(spotId, JLabel.CENTER);
         JLabel l2 = new JLabel(type, JLabel.CENTER);
-        JLabel l3 = new JLabel(
-                occupied ? "Occupied by " + plate : "Available",
-                JLabel.CENTER
-        );
+        JLabel l3 = new JLabel("", JLabel.CENTER);
         JLabel l4 = new JLabel("RM " + rate + "/hr", JLabel.CENTER);
 
         if (occupied) {
             spot.setBackground(Color.RED);
+            l3.setText("Occupied by " + plate);
         } else {
             spot.setBackground(new Color(0, 150, 0));
+            l3.setText("Available");
         }
 
         if (disableIfOccupied && occupied) {
             spot.setEnabled(false);
         }
 
+        spot.addActionListener(e -> {
+
+            //error toask user to input plate no. before selecting a spot
+            if (entryPlate.getText().isEmpty()){
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter your vehicle plate number before selecting a spot",
+                        "No vehicle plate number",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+                return;
+            }
+
+            //if have entered plate no. ask to confirm
+            int selectedOpt = JOptionPane.showConfirmDialog(
+                this, 
+                "Are your sure you want to select this spot?", 
+                "Confirm spot selection",
+                JOptionPane.YES_NO_OPTION);
+
+            if (selectedOpt == JOptionPane.YES_OPTION){
+                String enteredPlate = entryPlate.getText().trim();
+
+                spot.setBackground(Color.RED);
+                l3.setText("Occupied by " + enteredPlate);
+                spot.setEnabled(false);
+
+                spot.revalidate();
+                spot.repaint();
+            }   
+        });
+
+        //add labels to buttom
         spot.add(l1);
         spot.add(l2);
         spot.add(l3);

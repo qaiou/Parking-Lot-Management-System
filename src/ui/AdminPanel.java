@@ -7,27 +7,33 @@ import java.util.Random;
 
 public class AdminPanel extends JPanel {
 
+    private final int TOTSPOTS = 144; //total all spots in system
+
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
 
     public AdminPanel() {
-        setLayout(new BorderLayout(15, 15));
-        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
 
         JLabel title = new JLabel("Admin Panel", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
         add(title, BorderLayout.NORTH);
 
-        add(createLeftPanel(), BorderLayout.WEST);
-        add(createTabbedCenterPanel(), BorderLayout.CENTER);
+        add(leftPanel(), BorderLayout.WEST);
+        add(tabbedCenterPanel(), BorderLayout.CENTER);
     }
 
     // ---------------- LEFT PANEL ----------------
-    private JPanel createLeftPanel() {
+    private JPanel leftPanel() {
         JPanel panel = new JPanel(new GridLayout(7, 1, 10, 10));
         panel.setBorder(new TitledBorder("System Summary"));
 
-        occupancyLabel = new JLabel("Occupancy Rate: 72 / 144 (50%)");
+        // harcoded
+        int sampleOccupied = 72;
+        double samplePercentage = ((double) sampleOccupied/TOTSPOTS)*100.00;
+
+        occupancyLabel = new JLabel("Occupancy Rate: " + sampleOccupied +" / "+ TOTSPOTS + "(" + samplePercentage + "%)");
         revenueLabel = new JLabel("Total Revenue: RM 0.00");
 
         panel.add(occupancyLabel);
@@ -50,16 +56,16 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- CENTER TABS ----------------
-    private JTabbedPane createTabbedCenterPanel() {
+    private JTabbedPane tabbedCenterPanel() {
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Parking Lot Status", createParkingLotView());
-        tabs.addTab("Parked Vehicles", createParkedVehiclesPanel());
-        tabs.addTab("Unpaid Fines", createUnpaidFinesPanel());
+        tabs.addTab("Parking Lot Status", parkingLotView());
+        tabs.addTab("Parked Vehicles", parkedVehiclesPanel());
+        tabs.addTab("Unpaid Fines", unpaidFinesPanel());
         return tabs;
     }
 
     // ---------------- PARKING LOT GRID ----------------
-    private JPanel createParkingLotView() {
+    private JPanel parkingLotView() {
         JPanel container = new JPanel(new BorderLayout());
         container.setBorder(new TitledBorder("Parking Lot Status"));
 
@@ -78,7 +84,7 @@ public class AdminPanel extends JPanel {
                 for (int spot = 1; spot <= 6; spot++) {
 
                     String spotId = "F" + floor + "-R" + (row + 1) + "-S" + spot;
-                    JButton spotBtn = createSpotBox(spotId, rowTypes[row], rates[row], false);
+                    JButton spotBtn = spotBox(spotId, rowTypes[row], rates[row], false);
                     floorPanel.add(spotBtn);
                 }
             }
@@ -92,7 +98,7 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- PARKED VEHICLES ----------------
-    private JPanel createParkedVehiclesPanel() {
+    private JPanel parkedVehiclesPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Vehicles Currently Parked"));
 
@@ -106,7 +112,7 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- UNPAID FINES ----------------
-    private JPanel createUnpaidFinesPanel() {
+    private JPanel unpaidFinesPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Outstanding Fines"));
 
@@ -120,7 +126,7 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- SPOT BUTTON ----------------
-    private JButton createSpotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
+    private JButton spotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
 
         JButton spot = new JButton();
         spot.setLayout(new GridLayout(4, 1));
@@ -128,15 +134,13 @@ public class AdminPanel extends JPanel {
         spot.setForeground(Color.WHITE);
         spot.setFont(new Font("Arial", Font.PLAIN, 10));
 
+        //hardcoded the occuppied spots. should be changed
         boolean occupied = new Random().nextBoolean();
         String plate = occupied ? "ABC1234" : null;
 
         JLabel l1 = new JLabel(spotId, JLabel.CENTER);
         JLabel l2 = new JLabel(type, JLabel.CENTER);
-        JLabel l3 = new JLabel(
-                occupied ? "Occupied by " + plate : "Available",
-                JLabel.CENTER
-        );
+        JLabel l3 = new JLabel( occupied ? "Occupied by " + plate : "Available", JLabel.CENTER);
         JLabel l4 = new JLabel("RM " + rate + "/hr", JLabel.CENTER);
 
         if (occupied) {
@@ -149,6 +153,7 @@ public class AdminPanel extends JPanel {
             spot.setEnabled(false);
         }
 
+        //add labels to button
         spot.add(l1);
         spot.add(l2);
         spot.add(l3);
