@@ -40,6 +40,8 @@ public class EntryExitPanel extends JPanel {
         JComboBox<String> preferredSpotBox = new JComboBox<>(new String[]{
                 "Compact", "Regular", "Handicapped", "Reserved"
         });
+        JCheckBox vipCheckBox = new JCheckBox("VIP Customer");
+
 
         JButton btnSearch = new JButton("Show Available Spots");
 
@@ -49,7 +51,7 @@ public class EntryExitPanel extends JPanel {
         form.add(vehicleTypeBox);
         form.add(new JLabel("Preferred Spot Type:"));
         form.add(preferredSpotBox);
-        form.add(new JLabel());
+        form.add(vipCheckBox);
         form.add(btnSearch);
 
         panel.add(form, BorderLayout.NORTH);
@@ -65,8 +67,18 @@ public class EntryExitPanel extends JPanel {
 
             String vehicle = (String) vehicleTypeBox.getSelectedItem();
             String preferred = (String) preferredSpotBox.getSelectedItem();
+            boolean isVip = vipCheckBox.isSelected();
 
-            if (!isValid(vehicle, preferred)) {
+            if (!isValid(vehicle, preferred, isVip)) {
+                if (preferred == "Reserved" && isVip == false){
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "User must be registered as a VIP customer to book a reserved spot",
+                        "Invalid Selection",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
                 JOptionPane.showMessageDialog(
                         this,
                         vehicle + " cannot park in " + preferred + " spots.",
@@ -107,9 +119,15 @@ public class EntryExitPanel extends JPanel {
         return panel;
     }
 
-    private boolean isValid(String vehicle, String spot) {
-        if (vehicle.equals("Motorcycle") && !spot.equals("Compact")) return false;
-        if (vehicle.equals("SUV/Truck") && !spot.equals("Regular")) return false;
+    private boolean isValid(String vehicle, String spot, boolean isVip) {
+        if (vehicle.equals("Motorcycle") && !spot.equals("Compact"))
+            return false;
+        if (vehicle.equals("Car") && !(spot.equals("Compact") || spot.equals("Regular") || spot.equals("Reserved")))
+            return false;
+        if (vehicle.equals("SUV/Truck") && !(spot.equals("Regular") || spot.equals("Reserved")))
+            return false;
+        if (spot.equals("Reserved") && !isVip)
+            return false;
         return true;
     }
 
