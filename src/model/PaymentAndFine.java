@@ -1,5 +1,49 @@
 package model;
 
+interface FineStrategy {
+    double calculateFine(int overstayHours);
+}
+
+class FixedFine implements FineStrategy {
+    @Override
+    public double calculateFine(int overstayHours) {
+        return 50.00; // Flat RM 50 fine
+    }
+}
+
+class HourlyFine implements FineStrategy {
+    @Override
+    public double calculateFine(int overstayHours) {
+        return overstayHours * 20.00; // RM 20 per hour
+    }
+}
+
+class ProgressiveFine implements FineStrategy {
+    @Override
+    public double calculateFine(int overstayHours) {
+        if (overstayHours <= 24) return 50.00;
+        else if (overstayHours <= 48) return 150.00;
+        else if (overstayHours <= 72) return 300.00;
+        else return 500.00; // capped
+    }
+}
+
+class FineCalculator {
+    private FineStrategy fineStrategy;
+
+    FineCalculator(FineStrategy fineStrategy) {
+        this.fineStrategy = fineStrategy;
+    }
+
+    void setFineStrategy(FineStrategy fineStrategy) {
+        this.fineStrategy = fineStrategy;
+    }
+
+    double calculateFine(int overstayHours) {
+        return fineStrategy.calculateFine(overstayHours);
+    }
+}
+
 public class PaymentAndFine {
     private String plate;
     private double usageFee;
