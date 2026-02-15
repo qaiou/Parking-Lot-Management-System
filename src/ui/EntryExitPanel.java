@@ -1,16 +1,20 @@
 package ui;
 
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
+import controller.PaymentAndFineController;
 import java.awt.*;
 import java.util.Random;
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
 
 public class EntryExitPanel extends JPanel {
 
     private JPanel resultPanel;
     private JTextField entryPlate, exitPlate;
+    
+    private PaymentAndFineController controller;
 
-    public EntryExitPanel() {
+    public EntryExitPanel(PaymentAndFineController controller) {
+        this.controller = controller;
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
@@ -168,6 +172,7 @@ public class EntryExitPanel extends JPanel {
             String method = (String) paymentMethodBox.getSelectedItem();
             cashField.setEnabled(method.equals("Cash"));
         });
+
 
         return panel;
     }

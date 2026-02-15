@@ -1,9 +1,10 @@
 package ui;
 
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
+import controller.PaymentAndFineController;
 import java.awt.*;
 import java.util.Random;
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
 
 public class AdminPanel extends JPanel {
 
@@ -11,8 +12,12 @@ public class AdminPanel extends JPanel {
 
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
+    private JTable finesTable;
+    private PaymentAndFineController controller;
 
-    public AdminPanel() {
+
+    public AdminPanel(PaymentAndFineController controller) {
+        this.controller = controller;
         setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
 
@@ -48,6 +53,12 @@ public class AdminPanel extends JPanel {
         });
 
         JButton btnApply = new JButton("Apply Scheme");
+        btnApply.addActionListener(e -> {
+            String scheme = (String) fineSchemeBox.getSelectedItem();
+            JOptionPane.showMessageDialog(this,
+                    "Fine scheme applied: " + scheme,
+                    "Scheme Updated", JOptionPane.INFORMATION_MESSAGE);
+            });
 
         panel.add(fineSchemeBox);
         panel.add(btnApply);
