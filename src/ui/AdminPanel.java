@@ -1,23 +1,30 @@
 package ui;
 
 import controller.PaymentAndFineController;
+import model.ParkingLot;
+import model.Floor;
+import model.ParkingSpot;
+
 import java.awt.*;
 import java.util.Random;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+
 public class AdminPanel extends JPanel {
 
-    private final int TOTSPOTS = 144; //total all spots in system
+    
+    private final int TOTSPOTS = 96; //total all spots in system
 
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
     private JTable finesTable;
     private PaymentAndFineController controller;
-
+    private ParkingLot parkingLot;
 
     public AdminPanel(PaymentAndFineController controller) {
         this.controller = controller;
+        this.parkingLot = ParkingLot.getInstance();
         setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
 
@@ -34,11 +41,11 @@ public class AdminPanel extends JPanel {
         JPanel panel = new JPanel(new GridLayout(7, 1, 10, 10));
         panel.setBorder(new TitledBorder("System Summary"));
 
-        // harcoded
-        int sampleOccupied = 72;
-        double samplePercentage = ((double) sampleOccupied/TOTSPOTS)*100.00;
+        
+        // occupancy from ParkingLot
+         updateOccupancyDisplay();
 
-        occupancyLabel = new JLabel("Occupancy Rate: " + sampleOccupied +" / "+ TOTSPOTS + "(" + samplePercentage + "%)");
+
         revenueLabel = new JLabel("Total Revenue: RM 0.00");
 
         panel.add(occupancyLabel);
@@ -66,6 +73,38 @@ public class AdminPanel extends JPanel {
         return panel;
     }
 
+
+    // Updates the occupancy label with real data from ParkingLot
+     
+    private void updateOccupancyDisplay() {
+        int occupied = parkingLot.getOccupiedSpots();
+        int total = parkingLot.getTotalSpots();
+        double percentage = parkingLot.getOccupancyRate();
+        
+        String displayText = String.format("Occupancy Rate: %d / %d (%.1f%%)", 
+            occupied, total, percentage);
+        
+        if (occupancyLabel == null) {
+            occupancyLabel = new JLabel(displayText);
+        } else {
+            occupancyLabel.setText(displayText);
+        }
+    }
+    
+    /**
+     * Refreshes all data displays
+     */
+    public void refreshData() {
+        updateOccupancyDisplay();
+        revalidate();
+        repaint();
+        JOptionPane.showMessageDialog(this, 
+            "Data refreshed successfully!", 
+            "Refresh", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
+
     // ---------------- CENTER TABS ----------------
     private JTabbedPane tabbedCenterPanel() {
         JTabbedPane tabs = new JTabbedPane();
@@ -83,21 +122,16 @@ public class AdminPanel extends JPanel {
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-        String[] rowTypes = {"Handicapped", "Reserved", "Compact", "Regular"};
-        double[] rates = {2.0, 10.0, 2.0, 5.0};
-
-        for (int floor = 1; floor <= 4; floor++) {
-
+        // Get all floors from the parking lot
+        for (Floor floor : parkingLot.getAllFloors()) {
             JPanel floorPanel = new JPanel(new GridLayout(4, 6, 8, 8));
-            floorPanel.setBorder(new TitledBorder("Floor " + floor));
+            floorPanel.setBorder(new TitledBorder("Floor " + floor.getFloorNumber()));
 
-            for (int row = 0; row < 4; row++) {
-                for (int spot = 1; spot <= 6; spot++) {
-
-                    String spotId = "F" + floor + "-R" + (row + 1) + "-S" + spot;
-                    JButton spotBtn = spotBox(spotId, rowTypes[row], rates[row], false);
-                    floorPanel.add(spotBtn);
-                }
+            // Get all spots from this floor and display them
+            java.util.List<ParkingSpot> spots = floor.getAllSpots();
+            for (ParkingSpot spot : spots) {
+                JButton spotBtn = spotBox(spot, false);
+                floorPanel.add(spotBtn);
             }
 
             mainPanel.add(floorPanel);
@@ -137,39 +171,48 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- SPOT BUTTON ----------------
-    private JButton spotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
+   /**
+     * Creates a button representing a parking spot with real data
+     * @param spot The ParkingSpot object containing real data
+     * @param disableIfOccupied Whether to disable the button if spot is occupied
+     * @return JButton representing the parking spot
+     */
+    private JButton spotBox(ParkingSpot spot, boolean disableIfOccupied) {
+        JButton spotBtn = new JButton();
+        spotBtn.setLayout(new GridLayout(4, 1));
+        spotBtn.setFocusPainted(false);
+        spotBtn.setForeground(Color.WHITE);
+        spotBtn.setFont(new Font("Arial", Font.PLAIN, 10));
 
-        JButton spot = new JButton();
-        spot.setLayout(new GridLayout(4, 1));
-        spot.setFocusPainted(false);
-        spot.setForeground(Color.WHITE);
-        spot.setFont(new Font("Arial", Font.PLAIN, 10));
-
-        //hardcoded the occuppied spots. should be changed
-        boolean occupied = new Random().nextBoolean();
-        String plate = occupied ? "ABC1234" : null;
+        // Get REAL data from ParkingSpot object
+        String spotId = spot.getSpotId();
+        String type = spot.getTypeName();
+        boolean occupied = spot.isOccupied();
+        String statusText = spot.getStatusDisplay();
+        double rate = spot.getHourlyRate();
 
         JLabel l1 = new JLabel(spotId, JLabel.CENTER);
         JLabel l2 = new JLabel(type, JLabel.CENTER);
-        JLabel l3 = new JLabel( occupied ? "Occupied by " + plate : "Available", JLabel.CENTER);
+        JLabel l3 = new JLabel(statusText, JLabel.CENTER);
         JLabel l4 = new JLabel("RM " + rate + "/hr", JLabel.CENTER);
 
+        // Set color based on real occupancy status
         if (occupied) {
-            spot.setBackground(Color.RED);
+            spotBtn.setBackground(Color.RED);
         } else {
-            spot.setBackground(new Color(0, 150, 0));
+            spotBtn.setBackground(new Color(0, 150, 0));
         }
 
         if (disableIfOccupied && occupied) {
-            spot.setEnabled(false);
+            spotBtn.setEnabled(false);
         }
 
-        //add labels to button
-        spot.add(l1);
-        spot.add(l2);
-        spot.add(l3);
-        spot.add(l4);
+        // Add labels to button
+        spotBtn.add(l1);
+        spotBtn.add(l2);
+        spotBtn.add(l3);
+        spotBtn.add(l4);
 
-        return spot;
+        return spotBtn;
     }
 }
