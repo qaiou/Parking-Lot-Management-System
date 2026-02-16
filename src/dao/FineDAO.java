@@ -72,7 +72,6 @@ public class FineDAO {
         String sql = """
             SELECT plate, SUM(amount) as total
             FROM fines
-            WHERE paid = 0
             GROUP BY plate
         """;
 
