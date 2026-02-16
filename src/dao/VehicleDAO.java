@@ -86,7 +86,7 @@ public class VehicleDAO {
     public List<String[]> getCurrentlyParkedVehicles() {
         List<String[]> list = new ArrayList<>();
 
-        String sql = "SELECT plate, type, spot_id, entry_time FROM vehicles";
+        String sql = "SELECT plate_number, vehicle_type, spot_id, entry_time FROM parked_vehicles";
 
         try (Connection conn = DBConnect.getConnect();
             PreparedStatement ps = conn.prepareStatement(sql);

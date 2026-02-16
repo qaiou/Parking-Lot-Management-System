@@ -1,6 +1,6 @@
 package app;
 
-import controller.PaymentAndFineController;
+import controller.*;
 import dao.DBConnect;
 
 import java.awt.*;
@@ -17,6 +17,7 @@ public class Main {
             DBConnect.initializeDatabase();
 
             PaymentAndFineController controller = new PaymentAndFineController();
+            ReportController reportController = new ReportController();
 
             JFrame frame = new JFrame("Parking Lot Management System");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -26,7 +27,7 @@ public class Main {
             JTabbedPane tabs = new JTabbedPane();
             tabs.addTab("Admin Panel", new AdminPanel(controller));
             tabs.addTab("Entry / Exit", new EntryExitPanel(controller));
-            tabs.addTab("Reporting", new ReportingPanel());
+            tabs.addTab("Reporting", new ReportingPanel(reportController));
 
             frame.add(tabs, BorderLayout.CENTER);
             frame.setVisible(true);

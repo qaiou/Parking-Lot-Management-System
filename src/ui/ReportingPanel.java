@@ -1,12 +1,20 @@
 package ui;
 
+import controller.ReportController;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class ReportingPanel extends JPanel {
 
-    public ReportingPanel() {
+    private ReportController controller;
+
+    public ReportingPanel(ReportController controller) {
+        this.controller = controller;
+
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
@@ -14,77 +22,97 @@ public class ReportingPanel extends JPanel {
         title.setFont(new Font("Arial", Font.BOLD, 22));
         add(title, BorderLayout.NORTH);
 
-        // -------- Tabs --------
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Current Vehicles", vehicleReport());
-        tabs.addTab("Revenue Report", revenueReport());
-        tabs.addTab("Occupancy Report", occupancyReport());
-        tabs.addTab("Fine Report", fineReport());
+
+        tabs.addTab("Currently Parked Vehicles", createParkedVehiclesTab());
+        tabs.addTab("Revenue Report", createRevenueTab());
+        tabs.addTab("Occupancy Report", createOccupancyTab());
+        tabs.addTab("Fine Report", createFineTab());
 
         add(tabs, BorderLayout.CENTER);
     }
 
-    private JPanel vehicleReport() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new TitledBorder("Vehicles Currently Parked"));
+    // ===============================
+    // CURRENTLY PARKED VEHICLES
+    // ===============================
+    private JPanel createParkedVehiclesTab() {
 
-        JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"License Plate", "Vehicle Type", "Spot ID", "Entry Time"}
-        );
+        JPanel panel = new JPanel(new BorderLayout());
+
+        String[] columns = {"Plate", "Vehicle Type", "Spot ID", "Entry Time"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
+
+        List<String[]> data = controller.getParkedVehicles();
+
+        for (String[] row : data) {
+            model.addRow(row);
+        }
+
+        JTable table = new JTable(model);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        JButton btnRefresh = new JButton("Refresh");
-        panel.add(btnRefresh, BorderLayout.SOUTH);
 
         return panel;
     }
 
-    private JPanel revenueReport() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new TitledBorder("Revenue Report"));
+    // ===============================
+    //  REVENUE REPORT
+    // ===============================
+    private JPanel createRevenueTab() {
 
-        JTextArea revenueArea = new JTextArea();
-        revenueArea.setEditable(false);
+        JPanel panel = new JPanel(new BorderLayout());
 
-        JButton btnGenerate = new JButton("Generate Revenue Report");
+        double totalRevenue = controller.getRevenue();
 
-        panel.add(new JScrollPane(revenueArea), BorderLayout.CENTER);
-        panel.add(btnGenerate, BorderLayout.SOUTH);
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        area.setText("=== TOTAL REVENUE ===\n\nRM " + totalRevenue);
 
-        return panel;
-    }
-
-    private JPanel occupancyReport() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new TitledBorder("Occupancy Report"));
-
-        JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"Floor", "Total Spots", "Occupied Spots", "Occupancy Rate"}
-        );
-
-        JButton btnRefresh = new JButton("Refresh");
-
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-        panel.add(btnRefresh, BorderLayout.SOUTH);
+        panel.add(area, BorderLayout.CENTER);
 
         return panel;
     }
 
-    private JPanel fineReport() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new TitledBorder("Outstanding Fine Report"));
+    // ===============================
+    //  OCCUPANCY REPORT
+    // ===============================
+    private JPanel createOccupancyTab() {
 
-        JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"License Plate", "Fine Amount", "Reason"}
-        );
+        JPanel panel = new JPanel(new BorderLayout());
 
-        JButton btnRefresh = new JButton("Refresh");
+        String[] columns = {"Floor", "Total Spots", "Occupied Spots", "Occupancy Rate"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
 
+        List<String[]> data = controller.getOccupancy();
+
+        for (String[] row : data) {
+            model.addRow(row);
+        }
+
+        JTable table = new JTable(model);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
-        panel.add(btnRefresh, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    // ===============================
+    // FINE REPORT
+    // ===============================
+    private JPanel createFineTab() {
+
+        JPanel panel = new JPanel(new BorderLayout());
+
+        String[] columns = {"Plate Number", "Total Unpaid Fine (RM)"};
+        DefaultTableModel model = new DefaultTableModel(columns, 0);
+
+        List<String[]> data = controller.getFineReport();
+
+        for (String[] row : data) {
+            model.addRow(row);
+        }
+
+        JTable table = new JTable(model);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
         return panel;
     }
