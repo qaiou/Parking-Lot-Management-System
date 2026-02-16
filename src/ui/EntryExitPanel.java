@@ -1,6 +1,7 @@
 package ui;
 
 import controller.PaymentAndFineController;
+import dao.PaymentDAO;
 import model.*; // Imports Vehicle, Car, Motorcycle, Ticket, ParkingSpot, etc.
 
 import java.awt.*;
@@ -22,6 +23,7 @@ public class EntryExitPanel extends JPanel {
     
     private PaymentAndFineController controller;
     private ParkingLot parkingLot;
+    private PaymentDAO insertPayment;
 
     // Temporary variables to store bill data between "Calculate" and "Pay"
     private double currentUsageFee = 0.0;
@@ -297,6 +299,8 @@ public class EntryExitPanel extends JPanel {
             sb.append("Method:      ").append(receipt.getPaymentMethod()).append("\n");
             sb.append("Status:      PAID & CLEARED\n");
             
+            insertPayment = new PaymentDAO();
+            insertPayment.insertPayment(currentPlate, receipt.getTotalAmount());  
             billArea.setText(sb.toString());
 
             JOptionPane.showMessageDialog(this, "Payment Successful!");
