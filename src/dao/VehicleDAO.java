@@ -1,7 +1,9 @@
 package dao;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import model.*;
 
@@ -80,4 +82,30 @@ public class VehicleDAO {
             default: return new Car(plate);
         }
     }
+
+    public List<String[]> getCurrentlyParkedVehicles() {
+        List<String[]> list = new ArrayList<>();
+
+        String sql = "SELECT plate, type, spot_id, entry_time FROM vehicles";
+
+        try (Connection conn = DBConnect.getConnect();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new String[]{
+                    rs.getString("plate_number"),
+                    rs.getString("vehicle_type"),
+                    rs.getString("spot_id"),
+                    rs.getString("entry_time")
+                });
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
 }

@@ -1,6 +1,6 @@
 package model;
 
-import dao.VehicleDAO;
+import dao.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +75,7 @@ public class ParkingLot {
     
     // --- Core Functionality ---
 
-    /**
-     * Park a vehicle in a specific spot and saves the record to the database.
-     */
+    //Park a vehicle in a specific spot and saves the record to the database.
     public boolean parkVehicle(String spotId, Vehicle vehicle) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null) {
@@ -91,9 +89,7 @@ public class ParkingLot {
         return success;
     }
     
-    /**
-     * Remove a vehicle from a specific spot and removes the record from the database.
-     */
+    //Remove a vehicle from a specific spot and removes the record from the database.
     public Vehicle removeVehicle(String spotId) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null || spot.isAvailable()) {
@@ -214,4 +210,32 @@ public class ParkingLot {
         }
         return sb.toString();
     }
+
+    public List<String[]> getOccupancyReport() {
+        List<String[]> report = new ArrayList<>();
+
+        for (Floor floor : floors) {
+
+            int total = floor.getAllSpots().size();
+            int occupied = 0;
+
+            for (ParkingSpot spot : floor.getAllSpots()) {
+                if (spot.isOccupied()) {
+                    occupied++;
+                }
+            }
+
+            double rate = (occupied * 100.0) / total;
+
+            report.add(new String[]{
+                "Floor " + floor.getFloorNumber(),
+                String.valueOf(total),
+                String.valueOf(occupied),
+                String.format("%.2f%%", rate)
+            });
+        }
+
+        return report;
+    }
+
 }

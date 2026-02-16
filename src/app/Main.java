@@ -1,6 +1,8 @@
 package app;
 
 import controller.PaymentAndFineController;
+import dao.DBConnect;
+
 import java.awt.*;
 import javax.swing.*;
 import ui.AdminPanel;
@@ -11,6 +13,8 @@ public class Main {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+
+            DBConnect.initializeDatabase();
 
             PaymentAndFineController controller = new PaymentAndFineController();
 

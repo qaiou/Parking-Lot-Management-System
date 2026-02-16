@@ -23,5 +23,41 @@ public class DBConnect {
         }
     }
 
+    public static void initializeDatabase() {
+        try (Connection conn = getConnect();
+            Statement stmt = conn.createStatement()) {
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS parked_vehicles (
+                    plate_number TEXT PRIMARY KEY,
+                    vehicle_type TEXT NOT NULL,
+                    spot_id TEXT NOT NULL,
+                    entry_time TEXT NOT NULL
+                )
+            """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS fines (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    plate TEXT NOT NULL,
+                    amount REAL NOT NULL
+                )
+            """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    plate TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    payment_time TEXT NOT NULL
+                )
+            """);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     
 }

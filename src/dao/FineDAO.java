@@ -1,7 +1,9 @@
 package dao;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FineDAO {
@@ -62,4 +64,34 @@ public class FineDAO {
             e.printStackTrace();
         }
     }
+
+    public List<String[]> getFineReport() {
+
+        List<String[]> list = new ArrayList<>();
+
+        String sql = """
+            SELECT plate, SUM(amount) as total
+            FROM fines
+            WHERE paid = 0
+            GROUP BY plate
+        """;
+
+        try (Connection conn = DBConnect.getConnect();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new String[]{
+                    rs.getString("plate"),
+                    String.valueOf(rs.getDouble("total"))
+                });
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
 }
