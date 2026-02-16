@@ -17,15 +17,15 @@ public class AdminPanel extends JPanel {
     private JTable finesTable;
     private PaymentAndFineController controller;
     private ParkingLot parkingLot;
+    private JPanel parkingGridContainer;  // Store reference to refresh grid
 
-    
 
     public AdminPanel(PaymentAndFineController controller) {
         this.controller = controller;
         this.parkingLot = ParkingLot.getInstance();
         
-        setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
-        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
+        setLayout(new BorderLayout(15, 15));
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JLabel title = new JLabel("Admin Panel", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
@@ -37,7 +37,7 @@ public class AdminPanel extends JPanel {
 
     // ---------------- LEFT PANEL ----------------
     private JPanel leftPanel() {
-        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10));  // Changed from 7 to 8 for refresh button
+        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10));
         panel.setBorder(new TitledBorder("System Summary"));
 
         // Real occupancy from ParkingLot
@@ -67,15 +67,16 @@ public class AdminPanel extends JPanel {
         panel.add(fineSchemeBox);
         panel.add(btnApply);
         
-        // ADD REFRESH BUTTON
-        JButton btnRefresh = new JButton("🔄 Refresh Occupancy");
+        // REFRESH BUTTON - Now refreshes both occupancy AND parking grid
+        JButton btnRefresh = new JButton("🔄 Refresh All Data");
         btnRefresh.setFont(new Font("Arial", Font.BOLD, 12));
         btnRefresh.addActionListener(e -> {
             updateOccupancyDisplay();
+            refreshParkingGrid();  // Also refresh the grid!
             revalidate();
             repaint();
             JOptionPane.showMessageDialog(this, 
-                "Occupancy refreshed!\nCurrent: " + parkingLot.getOccupiedSpots() + " / " + parkingLot.getTotalSpots(), 
+                "All data refreshed!\nOccupancy: " + parkingLot.getOccupiedSpots() + " / " + parkingLot.getTotalSpots(), 
                 "Refresh Complete", 
                 JOptionPane.INFORMATION_MESSAGE);
         });
@@ -84,7 +85,6 @@ public class AdminPanel extends JPanel {
         return panel;
     }
 
-    // ADD THIS NEW METHOD
     /**
      * Updates the occupancy label with real data from ParkingLot
      */
@@ -102,6 +102,33 @@ public class AdminPanel extends JPanel {
             occupancyLabel.setText(displayText);
         }
     }
+    
+    /**
+     * Refreshes the parking grid to show current spot colors
+     */
+    private void refreshParkingGrid() {
+        if (parkingGridContainer != null) {
+            parkingGridContainer.removeAll();
+            
+            // Rebuild the grid with current data
+            for (Floor floor : parkingLot.getAllFloors()) {
+                JPanel floorPanel = new JPanel(new GridLayout(4, 6, 8, 8));
+                floorPanel.setBorder(new TitledBorder("Floor " + floor.getFloorNumber()));
+
+                java.util.List<ParkingSpot> spots = floor.getAllSpots();
+                for (ParkingSpot spot : spots) {
+                    JButton spotBtn = spotBox(spot, false);
+                    floorPanel.add(spotBtn);
+                }
+
+                parkingGridContainer.add(floorPanel);
+                parkingGridContainer.add(Box.createVerticalStrut(15));
+            }
+            
+            parkingGridContainer.revalidate();
+            parkingGridContainer.repaint();
+        }
+    }
 
     // ---------------- CENTER TABS ----------------
     private JTabbedPane tabbedCenterPanel() {
@@ -117,26 +144,25 @@ public class AdminPanel extends JPanel {
         JPanel container = new JPanel(new BorderLayout());
         container.setBorder(new TitledBorder("Parking Lot Status"));
 
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        parkingGridContainer = new JPanel();
+        parkingGridContainer.setLayout(new BoxLayout(parkingGridContainer, BoxLayout.Y_AXIS));
 
-        // Get all floors from the parking lot
+        // Build initial grid
         for (Floor floor : parkingLot.getAllFloors()) {
             JPanel floorPanel = new JPanel(new GridLayout(4, 6, 8, 8));
             floorPanel.setBorder(new TitledBorder("Floor " + floor.getFloorNumber()));
 
-            // Get all spots from this floor and display them
             java.util.List<ParkingSpot> spots = floor.getAllSpots();
             for (ParkingSpot spot : spots) {
                 JButton spotBtn = spotBox(spot, false);
                 floorPanel.add(spotBtn);
             }
 
-            mainPanel.add(floorPanel);
-            mainPanel.add(Box.createVerticalStrut(15));
+            parkingGridContainer.add(floorPanel);
+            parkingGridContainer.add(Box.createVerticalStrut(15));
         }
 
-        container.add(new JScrollPane(mainPanel), BorderLayout.CENTER);
+        container.add(new JScrollPane(parkingGridContainer), BorderLayout.CENTER);
         return container;
     }
 
