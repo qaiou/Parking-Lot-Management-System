@@ -234,4 +234,5 @@ public class AdminPanel extends JPanel {
 
         return spotBtn;
     }
+    
 }
