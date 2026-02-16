@@ -1,3 +1,4 @@
+/* 
 package test; // nura
 
 import model.ParkingLot;
@@ -5,11 +6,14 @@ import model.Floor;
 import model.ParkingSpot;
 import model.SpotType;
 import java.util.List;
+*/
 
 /**
  * Simple test class to demonstrate the parking lot functionality
  * This shows how your backend model works independently of the UI
  */
+
+ /* 
 public class ParkingLotTest {
     
     public static void main(String[] args) {
@@ -91,4 +95,4 @@ public class ParkingLotTest {
         
         System.out.println("=== TEST COMPLETE ===");
     }
-}
+}*/

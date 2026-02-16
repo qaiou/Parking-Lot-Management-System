@@ -1,24 +1,36 @@
 package model;
 
+import dao.VehicleDAO;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-//Implements Singleton pattern to ensure only one parking lot exists.
- 
+/**
+ * Main ParkingLot class that manages the entire parking lot system.
+ * Implements Singleton pattern to ensure only one parking lot exists.
+ * Updated to include persistence for vehicle entry and exit.
+ */
 public class ParkingLot {
     
     private static ParkingLot instance; 
     private List<Floor> floors;
     private int totalFloors;
-    
-    //Private constructor for Singleton
+    private VehicleDAO vehicleDao;
+
+    /**
+     * Private constructor for Singleton
+     */
     private ParkingLot(int numberOfFloors) {
         this.totalFloors = numberOfFloors;
         this.floors = new ArrayList<>();
+        this.vehicleDao = new VehicleDAO();
         initializeFloors();
+        loadPersistedVehicles(); 
     }
     
-    //Get instance with specific number of floors (used for initialization)
+    /**
+     * Get instance with specific number of floors
+     */
     public static ParkingLot getInstance(int numberOfFloors) {
         if (instance == null) {
             instance = new ParkingLot(numberOfFloors);
@@ -26,7 +38,9 @@ public class ParkingLot {
         return instance;
     }
     
-    //Get instance with default (4) floors
+    /**
+     * Get instance with default (4) floors
+     */
     public static ParkingLot getInstance() {
         return getInstance(4); 
     }
@@ -36,49 +50,73 @@ public class ParkingLot {
             floors.add(new Floor(i));
         }
     }
+
+    /**
+     * Loads previously saved vehicles from the database.
+     * Recreates Ticket objects to prevent "corrupted data" errors in the Exit Panel.
+     */
+    private void loadPersistedVehicles() {
+        Map<String, Vehicle> savedVehicles = vehicleDao.loadAllVehicles();
+        for (Map.Entry<String, Vehicle> entry : savedVehicles.entrySet()) {
+            String spotId = entry.getKey();
+            Vehicle vehicle = entry.getValue();
+            
+            // Re-assign a valid Ticket to the loaded vehicle
+            Ticket ticket = new Ticket(vehicle.getPlateNumber(), spotId);
+            vehicle.setTicket(ticket);
+            
+            ParkingSpot spot = findSpotById(spotId);
+            if (spot != null) {
+                // Directly occupy the spot without repeating the save logic
+                spot.occupySpot(vehicle);
+            }
+        }
+    }
     
     // --- Core Functionality ---
 
     /**
-     * Park a vehicle in a specific spot.
-     * Delegates validation to ParkingSpot.occupySpot().
-     * spotId the ID of the spot (e.g., "F1-R1-S1")
-     * vehicle ---> Vehicle object to park
-     * return true if successful, false if spot occupied or type mismatch
+     * Park a vehicle in a specific spot and saves the record to the database.
      */
     public boolean parkVehicle(String spotId, Vehicle vehicle) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null) {
             return false; 
         }
-        return spot.occupySpot(vehicle);
+        
+        boolean success = spot.occupySpot(vehicle);
+        if (success) {
+            vehicleDao.saveVehicle(vehicle, spotId);
+        }
+        return success;
     }
     
     /**
-     * Remove a vehicle from a specific spot.
-     * spotId the ID of the spot
-     * return the Vehicle object that left (needed for billing)
+     * Remove a vehicle from a specific spot and removes the record from the database.
      */
     public Vehicle removeVehicle(String spotId) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null || spot.isAvailable()) {
             return null;
         }
-        return spot.releaseSpot();
+        
+        Vehicle vehicle = spot.releaseSpot();
+        if (vehicle != null) {
+            vehicleDao.removeVehicle(spotId);
+        }
+        return vehicle;
     }
     
     // --- Search & Retrieval Methods ---
 
     public ParkingSpot findSpotById(String spotId) {
         try {
-            // Assumes ID format F1-R1-S1. Parses "1" from "F1"
             int floorNum = Integer.parseInt(spotId.substring(1, spotId.indexOf('-')));
             Floor floor = getFloor(floorNum);
             if (floor != null) {
                 return floor.getSpotById(spotId);
             }
         } catch (Exception e) {
-            // Handle invalid ID formats gracefully
             return null;
         }
         return null;
@@ -92,9 +130,6 @@ public class ParkingLot {
         return availableSpots;
     }
     
-    //Finds the spot containing a specific vehicle plate.
-     //for Exit Panel when user only enters plate number.
-     
     public ParkingSpot findVehicleSpot(String vehiclePlate) {
         for (Floor floor : floors) {
             for (ParkingSpot spot : floor.getAllSpots()) {
@@ -108,8 +143,6 @@ public class ParkingLot {
         return null;
     }
 
-    //Used to populate the "Parked Vehicles" table.
-     
     public List<Vehicle> getAllParkedVehicles() {
         List<Vehicle> allVehicles = new ArrayList<>();
         for (Floor floor : floors) {
