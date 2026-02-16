@@ -1,15 +1,13 @@
 package model;
 
-/**
- * Represents a single parking spot in the parking lot.
- * Stores the specific Vehicle object when occupied and enforces parking rules.
- */
+// Represents a single parking spot in the parking lot.
+// Stores the specific Vehicle object when occupied and enforces parking rules.
 public class ParkingSpot {
     
     private String spotId;          
     private SpotType type;          
     private boolean isOccupied;     
-    private Vehicle currentVehicle; // Stores the actual Vehicle object
+    private Vehicle currentVehicle;
     private double hourlyRate;      
     
     public ParkingSpot(String spotId, SpotType type) {
@@ -20,55 +18,66 @@ public class ParkingSpot {
         this.hourlyRate = type.getRate(); 
     }
     
-    /**
-     * Tries to park a vehicle in this spot.
-     * Enforces strict rules about which vehicles can park in which spot types.
-     * * @param vehicle The Vehicle object to park.
-     * @return true if successful, false if rule violation or spot occupied.
-     */
+    // Tries to park a vehicle in this spot.
+    // Enforces rules about which vehicles can park in which spot types.
+    // Returns true if successful, false if rule violation or spot occupied.
     public boolean occupySpot(Vehicle vehicle) {
         if (isOccupied) {
             return false;
         }
 
-        // --- DEFENSIVE CHECKS (Validation) ---
-        
-        // Rule 1: Only Handicapped Vehicles can use Handicapped Spots
-        // (Note: Handicapped vehicles can park elsewhere, but normal cars can't park here)
-        if (this.type == SpotType.HANDICAPPED && !vehicle.getType().equals("Handicapped Vehicle")) {
+        String vType = vehicle.getType();
+
+        // Motorcycle can ONLY park in Compact spots
+        if (vType.equals("Motorcycle") && this.type != SpotType.COMPACT) {
             return false;
         }
 
-        // Rule 2: Only Electric Vehicles can use Electric Spots
-        if (this.type == SpotType.ELECTRIC && !vehicle.getType().equals("Electric Vehicle")) {
+        // Car can only park in Compact or Regular spots
+        if (vType.equals("Car") && this.type != SpotType.COMPACT && this.type != SpotType.REGULAR) {
             return false;
         }
 
-        // Rule 3: Motorcycles can ONLY use Compact spots
-        if (vehicle.getType().equals("Motorcycle") && this.type != SpotType.COMPACT) {
-             return false;
-        }
-
-        // Rule 4: SUVs/Trucks CANNOT use Compact spots (Too big)
-        if (vehicle.getType().equals("SUV/Truck") && this.type == SpotType.COMPACT) {
+        // SUV/Truck can ONLY park in Regular spots
+        if (vType.equals("SUV/Truck") && this.type != SpotType.REGULAR) {
             return false;
         }
 
-        // --- END CHECKS ---
+        // Only Handicapped Vehicles can use Handicapped spots
+        // Normal vehicles cannot park in Handicapped spots
+        if (this.type == SpotType.HANDICAPPED && !vType.equals("Handicapped Vehicle")) {
+            return false;
+        }
+
+        // Only Electric Vehicles can use Electric spots
+        if (this.type == SpotType.ELECTRIC && !vType.equals("Electric Vehicle")) {
+            return false;
+        }
+
+        // Handicapped Vehicle parking in a Handicapped spot = FREE (RM 0/hr)
+        // As per requirement: FREE only if handicapped card holder parks in handicapped spot
+        if (vType.equals("Handicapped Vehicle") && this.type == SpotType.HANDICAPPED) {
+            this.hourlyRate = 0.0;
+        } else if (vType.equals("Handicapped Vehicle")) {
+            // Handicapped vehicle parking elsewhere pays RM 2/hr (same as handicapped rate)
+            this.hourlyRate = SpotType.HANDICAPPED.getRate();
+        } else {
+            // All other vehicles pay the spot's normal rate
+            this.hourlyRate = this.type.getRate();
+        }
 
         this.isOccupied = true;
         this.currentVehicle = vehicle;
         return true;
     }
     
-    /**
-     * Removes the vehicle from this spot.
-     * @return The Vehicle object that was removed (useful for calculating fees).
-     */
+    // Removes the vehicle from this spot.
+    // Returns the Vehicle object that was removed, used for calculating fees.
     public Vehicle releaseSpot() {
         Vehicle leavingVehicle = this.currentVehicle;
         this.isOccupied = false;
         this.currentVehicle = null;
+        this.hourlyRate = this.type.getRate(); // Reset rate back to default
         return leavingVehicle;
     }
     
@@ -83,8 +92,6 @@ public class ParkingSpot {
         return "Available";
     }
     
-    // --- Getters ---
-
     public String getSpotId() {
         return spotId;
     }
@@ -101,9 +108,7 @@ public class ParkingSpot {
         return currentVehicle;
     }
     
-    /**
-     * Helper to get the plate number safely (returns null if empty).
-     */
+    // Returns the plate number safely, null if spot is empty
     public String getCurrentVehiclePlate() {
         if (currentVehicle != null) {
             return currentVehicle.getPlateNumber();
