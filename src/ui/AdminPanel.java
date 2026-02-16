@@ -1,31 +1,38 @@
 package ui;
 
 import controller.PaymentAndFineController;
-import model.ParkingLot;
-import model.Floor;
-import model.ParkingSpot;
 import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import javax.swing.*; // Imported new Vehicle class
+import javax.swing.border.TitledBorder;  // Imported new Ticket class
+import javax.swing.table.DefaultTableModel;
+import model.Floor;
+import model.ParkingLot;
+import model.ParkingSpot;
+import model.Ticket;
+import model.Vehicle; // Needed for dynamic tables
 
 public class AdminPanel extends JPanel {
 
-    private final int TOTSPOTS = 144; //total all spots in system
+    private final int TOTSPOTS = 144; 
 
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
-    private JTable finesTable;
+    
+    // CHANGED: Promoted models to class fields so we can refresh them
+    private DefaultTableModel parkedVehiclesModel;
+    private DefaultTableModel unpaidFinesModel;
+    
     private PaymentAndFineController controller;
     private ParkingLot parkingLot;
-
-    
 
     public AdminPanel(PaymentAndFineController controller) {
         this.controller = controller;
         this.parkingLot = ParkingLot.getInstance();
         
-        setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
-        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
+        setLayout(new BorderLayout(15, 15)); 
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); 
 
         JLabel title = new JLabel("Admin Panel", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
@@ -37,10 +44,11 @@ public class AdminPanel extends JPanel {
 
     // ---------------- LEFT PANEL ----------------
     private JPanel leftPanel() {
-        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10));  // Changed from 7 to 8 for refresh button
+        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10)); 
         panel.setBorder(new TitledBorder("System Summary"));
 
-        // Real occupancy from ParkingLot
+        // Initialize label
+        occupancyLabel = new JLabel("Loading...");
         updateOccupancyDisplay();
 
         revenueLabel = new JLabel("Total Revenue: RM 0.00");
@@ -59,6 +67,7 @@ public class AdminPanel extends JPanel {
         JButton btnApply = new JButton("Apply Scheme");
         btnApply.addActionListener(e -> {
             String scheme = (String) fineSchemeBox.getSelectedItem();
+            // TODO: Connect this to controller.setFineStrategy() if needed
             JOptionPane.showMessageDialog(this,
                     "Fine scheme applied: " + scheme,
                     "Scheme Updated", JOptionPane.INFORMATION_MESSAGE);
@@ -67,15 +76,13 @@ public class AdminPanel extends JPanel {
         panel.add(fineSchemeBox);
         panel.add(btnApply);
         
-        // ADD REFRESH BUTTON
-        JButton btnRefresh = new JButton("🔄 Refresh Occupancy");
+        // UPDATED REFRESH BUTTON
+        JButton btnRefresh = new JButton("🔄 Refresh Data");
         btnRefresh.setFont(new Font("Arial", Font.BOLD, 12));
         btnRefresh.addActionListener(e -> {
-            updateOccupancyDisplay();
-            revalidate();
-            repaint();
+            refreshAllData(); // Now refreshes tables too
             JOptionPane.showMessageDialog(this, 
-                "Occupancy refreshed!\nCurrent: " + parkingLot.getOccupiedSpots() + " / " + parkingLot.getTotalSpots(), 
+                "System data refreshed successfully!", 
                 "Refresh Complete", 
                 JOptionPane.INFORMATION_MESSAGE);
         });
@@ -84,10 +91,26 @@ public class AdminPanel extends JPanel {
         return panel;
     }
 
-    // ADD THIS NEW METHOD
     /**
-     * Updates the occupancy label with real data from ParkingLot
+     * Helper to refresh all admin data at once
      */
+    private void refreshAllData() {
+        // 1. Refresh Occupancy Label
+        updateOccupancyDisplay();
+        
+        // 2. Refresh Revenue Label
+        revenueLabel.setText(String.format("Total Revenue: RM %.2f", controller.getTotalRevenue()));
+        
+        // 3. Refresh Parked Vehicles Table
+        loadParkedVehiclesData();
+        
+        // 4. Refresh Unpaid Fines Table
+        loadUnpaidFinesData();
+        
+        revalidate();
+        repaint();
+    }
+
     private void updateOccupancyDisplay() {
         int occupied = parkingLot.getOccupiedSpots();
         int total = parkingLot.getTotalSpots();
@@ -96,9 +119,7 @@ public class AdminPanel extends JPanel {
         String displayText = String.format("Occupancy Rate: %d / %d (%.1f%%)", 
             occupied, total, percentage);
         
-        if (occupancyLabel == null) {
-            occupancyLabel = new JLabel(displayText);
-        } else {
+        if (occupancyLabel != null) {
             occupancyLabel.setText(displayText);
         }
     }
@@ -140,32 +161,82 @@ public class AdminPanel extends JPanel {
         return container;
     }
 
-    // ---------------- PARKED VEHICLES ----------------
+    // ---------------- PARKED VEHICLES (IMPLEMENTED) ----------------
     private JPanel parkedVehiclesPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Vehicles Currently Parked"));
 
-        JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"Plate", "Vehicle Type", "Spot", "Entry Time", "Ticket"}
-        );
+        // Column Headers
+        String[] columns = {"Plate Number", "Vehicle Type", "Spot ID", "Entry Time", "Ticket ID"};
+        
+        // Initialize Model
+        parkedVehiclesModel = new DefaultTableModel(columns, 0);
+        JTable table = new JTable(parkedVehiclesModel);
+
+        // Load initial data
+        loadParkedVehiclesData();
 
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
     }
 
-    // ---------------- UNPAID FINES ----------------
+    /**
+     * Fetches real data from ParkingLot and populates the table
+     */
+    private void loadParkedVehiclesData() {
+        if (parkedVehiclesModel == null) return;
+        
+        // Clear existing rows
+        parkedVehiclesModel.setRowCount(0);
+        
+        // Formatter for displaying time nicely
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        
+        // Get list of ALL vehicles from the model
+        java.util.List<Vehicle> vehicles = parkingLot.getAllParkedVehicles();
+        
+        for (Vehicle v : vehicles) {
+            String plate = v.getPlateNumber();
+            String type = v.getType();
+            String time = v.getEntryTime().format(formatter);
+            
+            // Handle ticket and spot safely (in case of manual entry errors)
+            Ticket t = v.getTicket();
+            String ticketId = (t != null) ? t.getTicketId() : "N/A";
+            String spotId = (t != null) ? t.getSpotId() : "Unknown";
+            
+            // Add row to table
+            parkedVehiclesModel.addRow(new Object[]{plate, type, spotId, time, ticketId});
+        }
+    }
+
+    // ---------------- UNPAID FINES (CONNECTED) ----------------
     private JPanel unpaidFinesPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Outstanding Fines"));
 
-        JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"Plate", "Amount (RM)"}
-        );
+        String[] columns = {"Plate Number", "Total Unpaid Amount (RM)"};
+        unpaidFinesModel = new DefaultTableModel(columns, 0);
+        JTable table = new JTable(unpaidFinesModel);
+        
+        // Load initial data
+        loadUnpaidFinesData();
 
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void loadUnpaidFinesData() {
+        if (unpaidFinesModel == null) return;
+        
+        unpaidFinesModel.setRowCount(0);
+        
+        // Get data from Controller -> DAO
+        Map<String, Double> fines = controller.getAllUnpaidFines();
+        
+        for (Map.Entry<String, Double> entry : fines.entrySet()) {
+            unpaidFinesModel.addRow(new Object[]{entry.getKey(), entry.getValue()});
+        }
     }
 
     // ---------------- SPOT BUTTON ----------------

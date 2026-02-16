@@ -28,4 +28,26 @@ public class PaymentAndFine {
              + "Payment Method: " + paymentMethod + "\n"
              + "Thank you!";
     }
+
+    // --- ADDED GETTERS (Fixes the "Method undefined" errors) ---
+
+    public String getPlateNumber() {
+        return plate;
+    }
+
+    public double getUsageFee() {
+        return usageFee;
+    }
+
+    public double getFineAmount() {
+        return fines + unpaidFines; // Returns total fines involved
+    }
+
+    public double getTotalAmount() {
+        return getTotal(); // Reuses the existing calculation
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
 }
