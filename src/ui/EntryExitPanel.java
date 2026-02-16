@@ -1,12 +1,16 @@
 package ui;
 
 import controller.PaymentAndFineController;
-// ⭐ ADD THESE 4 IMPORTS
 import model.ParkingLot;
 import model.ParkingSpot;
 import model.SpotType;
-import java.util.List;
+import model.Vehicle;
+import model.Motorcycle;
+import model.Car;
+import model.SUV;
+import model.HandicappedVehicle;
 
+import java.util.List;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -15,16 +19,15 @@ public class EntryExitPanel extends JPanel {
 
     private JPanel resultPanel;
     private JTextField entryPlate, exitPlate;
-    
+    private JComboBox<String> vehicleTypeBox;
+
     private PaymentAndFineController controller;
-    // ⭐ ADD THIS FIELD
     private ParkingLot parkingLot;
 
     public EntryExitPanel(PaymentAndFineController controller) {
         this.controller = controller;
-        // ⭐ ADD THIS LINE
         this.parkingLot = ParkingLot.getInstance();
-        
+
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
@@ -48,14 +51,13 @@ public class EntryExitPanel extends JPanel {
         form.setBorder(new TitledBorder("Vehicle Entry"));
 
         entryPlate = new JTextField();
-        JComboBox<String> vehicleTypeBox = new JComboBox<>(new String[]{
+        vehicleTypeBox = new JComboBox<>(new String[]{
                 "Motorcycle", "Car", "SUV/Truck", "Handicapped Vehicle"
         });
         JComboBox<String> preferredSpotBox = new JComboBox<>(new String[]{
                 "Compact", "Regular", "Handicapped", "Reserved"
         });
         JCheckBox vipCheckBox = new JCheckBox("VIP Customer");
-
 
         JButton btnSearch = new JButton("Show Available Spots");
 
@@ -76,7 +78,6 @@ public class EntryExitPanel extends JPanel {
 
         panel.add(new JScrollPane(resultPanel), BorderLayout.CENTER);
 
-        // ⭐ REPLACE btnSearch.addActionListener WITH THIS VERSION
         btnSearch.addActionListener(e -> {
             resultPanel.removeAll();
 
@@ -103,12 +104,9 @@ public class EntryExitPanel extends JPanel {
                 return;
             }
 
-            // Convert string to SpotType enum
             SpotType spotType = SpotType.fromString(preferred);
-            
-            // Get REAL available spots from ParkingLot
             List<ParkingSpot> availableSpots = parkingLot.getAvailableSpotsByType(spotType);
-            
+
             if (availableSpots.isEmpty()) {
                 JOptionPane.showMessageDialog(
                     this,
@@ -118,23 +116,20 @@ public class EntryExitPanel extends JPanel {
                 );
                 return;
             }
-            
-            // Group spots by floor for better display
+
             int currentFloor = 0;
             JPanel rowPanel = null;
-            
+
             for (ParkingSpot spot : availableSpots) {
-                // Extract floor number from spot ID (e.g., "F1-R1-S1" -> 1)
                 int floorNum = Integer.parseInt(spot.getSpotId().substring(1, 2));
-                
+
                 if (floorNum != currentFloor) {
-                    // New floor, create new panel
                     currentFloor = floorNum;
                     rowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
                     rowPanel.setBorder(new TitledBorder("Floor " + floorNum + " - " + preferred + " Spots"));
                     resultPanel.add(rowPanel);
                 }
-                
+
                 JButton spotBtn = spotBox(spot, true);
                 rowPanel.add(spotBtn);
             }
@@ -199,14 +194,7 @@ public class EntryExitPanel extends JPanel {
         return panel;
     }
 
-    // ⭐ REPLACE THE ENTIRE spotBox() METHOD WITH THIS
-    // ---------------- SPOT BUTTON (USES REAL PARKINGSPOT) ----------------
-    /**
-     * Creates a button for a parking spot with real data and booking functionality
-     * @param spot Real ParkingSpot object
-     * @param disableIfOccupied Whether to disable if occupied
-     * @return JButton for the spot
-     */
+    // ---------------- SPOT BUTTON ----------------
     private JButton spotBox(ParkingSpot spot, boolean disableIfOccupied) {
         JButton spotBtn = new JButton();
         spotBtn.setLayout(new GridLayout(4, 1));
@@ -214,7 +202,6 @@ public class EntryExitPanel extends JPanel {
         spotBtn.setForeground(Color.WHITE);
         spotBtn.setFont(new Font("Arial", Font.PLAIN, 10));
 
-        // Get REAL data from ParkingSpot object
         String spotId = spot.getSpotId();
         String type = spot.getTypeName();
         boolean occupied = spot.isOccupied();
@@ -237,9 +224,7 @@ public class EntryExitPanel extends JPanel {
             spotBtn.setEnabled(false);
         }
 
-        // Add click listener for booking
         spotBtn.addActionListener(e -> {
-            // Validate plate number entered
             if (entryPlate.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -250,36 +235,52 @@ public class EntryExitPanel extends JPanel {
                 return;
             }
 
-            // Confirm selection
             int selectedOpt = JOptionPane.showConfirmDialog(
-                this, 
-                "Book spot " + spotId + " for vehicle " + entryPlate.getText().trim() + "?", 
+                this,
+                "Book spot " + spotId + " for vehicle " + entryPlate.getText().trim() + "?",
                 "Confirm Spot Selection",
                 JOptionPane.YES_NO_OPTION);
 
             if (selectedOpt == JOptionPane.YES_OPTION) {
                 String enteredPlate = entryPlate.getText().trim();
-                
-                // ACTUALLY park the vehicle in the ParkingLot system
-                boolean success = parkingLot.parkVehicle(spotId, enteredPlate);
-                
+                String selectedVehicleType = (String) vehicleTypeBox.getSelectedItem();
+
+                Vehicle vehicle;
+                switch (selectedVehicleType) {
+                    case "Motorcycle":
+                        vehicle = new Motorcycle(enteredPlate);
+                        break;
+                    case "Car":
+                        vehicle = new Car(enteredPlate);
+                        break;
+                    case "SUV/Truck":
+                        vehicle = new SUV(enteredPlate);
+                        break;
+                    case "Handicapped Vehicle":
+                        vehicle = new HandicappedVehicle(enteredPlate);
+                        break;
+                    default:
+                        vehicle = new Car(enteredPlate);
+                        break;
+                }
+
+                boolean success = parkingLot.parkVehicle(spotId, vehicle);
+
                 if (success) {
-                    // Update UI to show occupied
                     spotBtn.setBackground(Color.RED);
                     l3.setText("Occupied by " + enteredPlate);
                     spotBtn.setEnabled(false);
-                    
+
                     spotBtn.revalidate();
                     spotBtn.repaint();
-                    
+
                     JOptionPane.showMessageDialog(
                         this,
                         "Vehicle " + enteredPlate + " successfully parked in spot " + spotId,
                         "Parking Successful",
                         JOptionPane.INFORMATION_MESSAGE
                     );
-                    
-                    // Clear the plate field for next vehicle
+
                     entryPlate.setText("");
                 } else {
                     JOptionPane.showMessageDialog(
@@ -292,7 +293,6 @@ public class EntryExitPanel extends JPanel {
             }
         });
 
-        // Add labels to button
         spotBtn.add(l1);
         spotBtn.add(l2);
         spotBtn.add(l3);
