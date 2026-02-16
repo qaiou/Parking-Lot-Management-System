@@ -4,17 +4,13 @@ import controller.PaymentAndFineController;
 import model.ParkingLot;
 import model.Floor;
 import model.ParkingSpot;
-
 import java.awt.*;
-import java.util.Random;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-
 public class AdminPanel extends JPanel {
 
-    
-    private final int TOTSPOTS = 96; //total all spots in system
+    private final int TOTSPOTS = 144; //total all spots in system
 
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
@@ -22,9 +18,11 @@ public class AdminPanel extends JPanel {
     private PaymentAndFineController controller;
     private ParkingLot parkingLot;
 
+
     public AdminPanel(PaymentAndFineController controller) {
         this.controller = controller;
         this.parkingLot = ParkingLot.getInstance();
+        
         setLayout(new BorderLayout(15, 15)); // like padding for the admin panel
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // kind of like settign the padding of the admin panel
 
@@ -38,13 +36,11 @@ public class AdminPanel extends JPanel {
 
     // ---------------- LEFT PANEL ----------------
     private JPanel leftPanel() {
-        JPanel panel = new JPanel(new GridLayout(7, 1, 10, 10));
+        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10));  // Changed from 7 to 8 for refresh button
         panel.setBorder(new TitledBorder("System Summary"));
 
-        
-        // occupancy from ParkingLot
-         updateOccupancyDisplay();
-
+        // Real occupancy from ParkingLot
+        updateOccupancyDisplay();
 
         revenueLabel = new JLabel("Total Revenue: RM 0.00");
 
@@ -69,13 +65,28 @@ public class AdminPanel extends JPanel {
 
         panel.add(fineSchemeBox);
         panel.add(btnApply);
+        
+        // ADD REFRESH BUTTON
+        JButton btnRefresh = new JButton("🔄 Refresh Occupancy");
+        btnRefresh.setFont(new Font("Arial", Font.BOLD, 12));
+        btnRefresh.addActionListener(e -> {
+            updateOccupancyDisplay();
+            revalidate();
+            repaint();
+            JOptionPane.showMessageDialog(this, 
+                "Occupancy refreshed!\nCurrent: " + parkingLot.getOccupiedSpots() + " / " + parkingLot.getTotalSpots(), 
+                "Refresh Complete", 
+                JOptionPane.INFORMATION_MESSAGE);
+        });
+        panel.add(btnRefresh);
 
         return panel;
     }
 
-
-    // Updates the occupancy label with real data from ParkingLot
-     
+    // ADD THIS NEW METHOD
+    /**
+     * Updates the occupancy label with real data from ParkingLot
+     */
     private void updateOccupancyDisplay() {
         int occupied = parkingLot.getOccupiedSpots();
         int total = parkingLot.getTotalSpots();
@@ -90,20 +101,6 @@ public class AdminPanel extends JPanel {
             occupancyLabel.setText(displayText);
         }
     }
-    
-    /**
-     * Refreshes all data displays
-     */
-    public void refreshData() {
-        updateOccupancyDisplay();
-        revalidate();
-        repaint();
-        JOptionPane.showMessageDialog(this, 
-            "Data refreshed successfully!", 
-            "Refresh", 
-            JOptionPane.INFORMATION_MESSAGE);
-    }
-
 
     // ---------------- CENTER TABS ----------------
     private JTabbedPane tabbedCenterPanel() {
@@ -171,13 +168,8 @@ public class AdminPanel extends JPanel {
     }
 
     // ---------------- SPOT BUTTON ----------------
-   /**
-     * Creates a button representing a parking spot with real data
-     * @param spot The ParkingSpot object containing real data
-     * @param disableIfOccupied Whether to disable the button if spot is occupied
-     * @return JButton representing the parking spot
-     */
     private JButton spotBox(ParkingSpot spot, boolean disableIfOccupied) {
+
         JButton spotBtn = new JButton();
         spotBtn.setLayout(new GridLayout(4, 1));
         spotBtn.setFocusPainted(false);
@@ -207,7 +199,7 @@ public class AdminPanel extends JPanel {
             spotBtn.setEnabled(false);
         }
 
-        // Add labels to button
+        //add labels to button
         spotBtn.add(l1);
         spotBtn.add(l2);
         spotBtn.add(l3);
