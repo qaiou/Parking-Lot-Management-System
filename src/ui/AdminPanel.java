@@ -2,9 +2,13 @@ package ui;
 
 import controller.PaymentAndFineController;
 import java.awt.*;
+import java.util.Map;
 import java.util.Random;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import model.FixedFine;
+import model.HourlyFine;
+import model.ProgressiveFine;
 
 public class AdminPanel extends JPanel {
 
@@ -39,7 +43,10 @@ public class AdminPanel extends JPanel {
         double samplePercentage = ((double) sampleOccupied/TOTSPOTS)*100.00;
 
         occupancyLabel = new JLabel("Occupancy Rate: " + sampleOccupied +" / "+ TOTSPOTS + "(" + samplePercentage + "%)");
-        revenueLabel = new JLabel("Total Revenue: RM 0.00");
+
+        // Revenue (live from controller)
+        double revenue = controller.getTotalRevenue();
+        revenueLabel = new JLabel("Total Revenue: RM " + String.format("%.2f", revenue));
 
         panel.add(occupancyLabel);
         panel.add(revenueLabel);
@@ -55,10 +62,21 @@ public class AdminPanel extends JPanel {
         JButton btnApply = new JButton("Apply Scheme");
         btnApply.addActionListener(e -> {
             String scheme = (String) fineSchemeBox.getSelectedItem();
-            JOptionPane.showMessageDialog(this,
-                    "Fine scheme applied: " + scheme,
-                    "Scheme Updated", JOptionPane.INFORMATION_MESSAGE);
-            });
+        switch (scheme) {
+            case "Fixed Fine Scheme":
+                controller.setFineStrategy(new FixedFine());
+                break;
+            case "Progressive Fine Scheme":
+                controller.setFineStrategy(new ProgressiveFine());
+                break;
+            case "Hourly Fine Scheme":
+                controller.setFineStrategy(new HourlyFine());
+                break;
+        }
+        JOptionPane.showMessageDialog(this,
+                "Fine scheme applied: " + scheme,
+                "Scheme Updated", JOptionPane.INFORMATION_MESSAGE);
+    });
 
         panel.add(fineSchemeBox);
         panel.add(btnApply);
@@ -128,13 +146,35 @@ public class AdminPanel extends JPanel {
         panel.setBorder(new TitledBorder("Outstanding Fines"));
 
         JTable table = new JTable(
-                new Object[][]{},
-                new String[]{"Plate", "Amount (RM)"}
-        );
+              new Object[][]{},
+            new String[]{"Plate", "Amount (RM)"}
+    );
 
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-        return panel;
+    JButton btnRefresh = new JButton("Refresh Fines");
+    btnRefresh.addActionListener(e -> loadUnpaidFines());
+
+    panel.add(new JScrollPane(finesTable), BorderLayout.CENTER);
+    panel.add(btnRefresh, BorderLayout.SOUTH);
+    return panel;
+}
+
+// ---------------- HELPER METHOD ----------------
+private void loadUnpaidFines() {
+    Map<String, Double> fines = controller.getAllUnpaidFines();
+    Object[][] data = new Object[fines.size()][2];
+    int i = 0;
+    for (Map.Entry<String, Double> entry : fines.entrySet()) {
+        data[i][0] = entry.getKey();   // plate
+        data[i][1] = entry.getValue(); // amount
+        i++;
     }
+    finesTable.setModel(new javax.swing.table.DefaultTableModel(
+            data,
+            new String[]{"Plate", "Amount (RM)"}
+    ));
+}
+
+     
 
     // ---------------- SPOT BUTTON ----------------
     private JButton spotBox(String spotId, String type, double rate, boolean disableIfOccupied) {
