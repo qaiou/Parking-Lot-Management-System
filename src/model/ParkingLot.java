@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Main ParkingLot class that manages the entire parking lot system.
  * Implements Singleton pattern to ensure only one parking lot exists.
- * Now integrated with VehicleDAO for data persistence.
+ * Updated to include persistence for vehicle entry and exit.
  */
 public class ParkingLot {
     
@@ -25,11 +25,11 @@ public class ParkingLot {
         this.floors = new ArrayList<>();
         this.vehicleDao = new VehicleDAO();
         initializeFloors();
-        loadPersistedVehicles(); // Reloads existing data from the database on startup
+        loadPersistedVehicles(); 
     }
     
     /**
-     * Get instance with specific number of floors (used for initialization)
+     * Get instance with specific number of floors
      */
     public static ParkingLot getInstance(int numberOfFloors) {
         if (instance == null) {
@@ -52,7 +52,8 @@ public class ParkingLot {
     }
 
     /**
-     * Internal method to reload vehicles from the database into the memory model.
+     * Loads previously saved vehicles from the database.
+     * Recreates Ticket objects to prevent "corrupted data" errors in the Exit Panel.
      */
     private void loadPersistedVehicles() {
         Map<String, Vehicle> savedVehicles = vehicleDao.loadAllVehicles();
@@ -60,9 +61,13 @@ public class ParkingLot {
             String spotId = entry.getKey();
             Vehicle vehicle = entry.getValue();
             
+            // Re-assign a valid Ticket to the loaded vehicle
+            Ticket ticket = new Ticket(vehicle.getPlateNumber(), spotId);
+            vehicle.setTicket(ticket);
+            
             ParkingSpot spot = findSpotById(spotId);
             if (spot != null) {
-                // Directly occupy the spot to restore the state
+                // Directly occupy the spot without repeating the save logic
                 spot.occupySpot(vehicle);
             }
         }
@@ -71,8 +76,7 @@ public class ParkingLot {
     // --- Core Functionality ---
 
     /**
-     * Park a vehicle in a specific spot.
-     * Delegates validation to ParkingSpot.occupySpot() and saves to database.
+     * Park a vehicle in a specific spot and saves the record to the database.
      */
     public boolean parkVehicle(String spotId, Vehicle vehicle) {
         ParkingSpot spot = findSpotById(spotId);
@@ -82,13 +86,13 @@ public class ParkingLot {
         
         boolean success = spot.occupySpot(vehicle);
         if (success) {
-            vehicleDao.saveVehicle(vehicle, spotId); // Persistence: Save to DB
+            vehicleDao.saveVehicle(vehicle, spotId);
         }
         return success;
     }
     
     /**
-     * Remove a vehicle from a specific spot and removes it from the database.
+     * Remove a vehicle from a specific spot and removes the record from the database.
      */
     public Vehicle removeVehicle(String spotId) {
         ParkingSpot spot = findSpotById(spotId);
@@ -98,7 +102,7 @@ public class ParkingLot {
         
         Vehicle vehicle = spot.releaseSpot();
         if (vehicle != null) {
-            vehicleDao.removeVehicle(spotId); // Persistence: Remove from DB
+            vehicleDao.removeVehicle(spotId);
         }
         return vehicle;
     }
