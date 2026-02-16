@@ -7,9 +7,13 @@ import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+
+import model.FixedFine;
 import model.Floor;
+import model.HourlyFine;
 import model.ParkingLot;
 import model.ParkingSpot;
+import model.ProgressiveFine;
 import model.Ticket;
 import model.Vehicle;
 
@@ -19,6 +23,7 @@ public class AdminPanel extends JPanel {
 
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
+    private JTable finesTable;
     
     // FIX: Class-level declaration so all methods can access the grid container
     private JPanel parkingGridContainer; 
@@ -49,10 +54,13 @@ public class AdminPanel extends JPanel {
         JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10)); 
         panel.setBorder(new TitledBorder("System Summary"));
 
+        //occupancy rate
         occupancyLabel = new JLabel("Loading...");
         updateOccupancyDisplay();
 
-        revenueLabel = new JLabel("Total Revenue: RM 0.00");
+         // Revenue (live from controller)
+        double revenue = controller.getTotalRevenue();
+        revenueLabel = new JLabel("Total Revenue: RM " + String.format("%.2f", revenue));
 
         panel.add(occupancyLabel);
         panel.add(revenueLabel);
@@ -68,10 +76,21 @@ public class AdminPanel extends JPanel {
         JButton btnApply = new JButton("Apply Scheme");
         btnApply.addActionListener(e -> {
             String scheme = (String) fineSchemeBox.getSelectedItem();
+            switch (scheme) {
+                case "Fixed Fine Scheme":
+                    controller.setFineStrategy(new FixedFine());
+                    break;
+                case "Progressive Fine Scheme":
+                    controller.setFineStrategy(new ProgressiveFine());
+                    break;
+                case "Hourly Fine Scheme":
+                    controller.setFineStrategy(new HourlyFine());
+                    break;
+            }
             JOptionPane.showMessageDialog(this,
                     "Fine scheme applied: " + scheme,
                     "Scheme Updated", JOptionPane.INFORMATION_MESSAGE);
-            });
+        });
 
         panel.add(fineSchemeBox);
         panel.add(btnApply);
@@ -114,9 +133,8 @@ public class AdminPanel extends JPanel {
         }
     }
     
-    /**
-     * Rebuilds the visual parking grid to show updated spot colors (Red/Green)
-     */
+    //Rebuilds the visual parking grid to show updated spot colors (Red/Green)
+    
     private void refreshParkingGrid() {
         if (parkingGridContainer != null) {
             parkingGridContainer.removeAll();
@@ -180,9 +198,7 @@ public class AdminPanel extends JPanel {
         return panel;
     }
 
-    /**
-     * Fetches real data from ParkingLot and populates the table
-     */
+    //Fetches real data from ParkingLot and populates the table
     private void loadParkedVehiclesData() {
         if (parkedVehiclesModel == null) return;
         
@@ -209,14 +225,33 @@ public class AdminPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new TitledBorder("Outstanding Fines"));
 
-        String[] columns = {"Plate Number", "Total Unpaid Amount (RM)"};
-        unpaidFinesModel = new DefaultTableModel(columns, 0);
-        JTable table = new JTable(unpaidFinesModel);
-        
-        loadUnpaidFinesData();
+        JTable finesTable = new JTable(
+            new Object[][]{},
+            new String[]{"Plate", "Amount (RM)"}
+        );
 
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        JButton btnRefresh = new JButton("Refresh Fines");
+        btnRefresh.addActionListener(e -> loadUnpaidFines());
+
+        panel.add(new JScrollPane(finesTable), BorderLayout.CENTER);
+        panel.add(btnRefresh, BorderLayout.SOUTH);
         return panel;
+    }
+
+    // ---------------- HELPER METHOD ----------------
+    private void loadUnpaidFines() {
+        Map<String, Double> fines = controller.getAllUnpaidFines();
+        Object[][] data = new Object[fines.size()][2];
+        int i = 0;
+        for (Map.Entry<String, Double> entry : fines.entrySet()) {
+            data[i][0] = entry.getKey();   // plate
+            data[i][1] = entry.getValue(); // amount
+            i++;
+        }
+        finesTable.setModel(new javax.swing.table.DefaultTableModel(
+                data,
+                new String[]{"Plate", "Amount (RM)"}
+        ));
     }
 
     private void loadUnpaidFinesData() {

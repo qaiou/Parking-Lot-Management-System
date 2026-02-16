@@ -218,7 +218,9 @@ public class EntryExitPanel extends JPanel {
         btnCalculate.addActionListener(e -> {
             String plate = exitPlate.getText().trim();
             if (plate.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Enter Plate Number");
+                JOptionPane.showMessageDialog(this,
+                        "Please enter a license plate.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
