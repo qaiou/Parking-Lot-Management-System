@@ -100,9 +100,7 @@ public class AdminPanel extends JPanel {
         return panel;
     }
 
-    /**
-     * Updates the occupancy label with real data from ParkingLot
-     */
+    //Updates the occupancy label with real data from ParkingLot
     private void updateOccupancyDisplay() {
         int occupied = parkingLot.getOccupiedSpots();
         int total = parkingLot.getTotalSpots();
