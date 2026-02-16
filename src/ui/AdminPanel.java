@@ -18,6 +18,7 @@ public class AdminPanel extends JPanel {
     private PaymentAndFineController controller;
     private ParkingLot parkingLot;
 
+    
 
     public AdminPanel(PaymentAndFineController controller) {
         this.controller = controller;
