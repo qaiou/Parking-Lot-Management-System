@@ -3,7 +3,6 @@ package ui;
 import controller.ReportController;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -18,10 +17,20 @@ public class ReportingPanel extends JPanel {
         setLayout(new BorderLayout(15, 15));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
+        // ===== Top Panel (Title + Refresh) =====
+        JPanel topPanel = new JPanel(new BorderLayout());
+
         JLabel title = new JLabel("Reporting Panel", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
-        add(title, BorderLayout.NORTH);
 
+        JButton refreshBtn = new JButton("Refresh");
+
+        topPanel.add(title, BorderLayout.CENTER);
+        topPanel.add(refreshBtn, BorderLayout.EAST);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        // ===== Tabs =====
         JTabbedPane tabs = new JTabbedPane();
 
         tabs.addTab("Currently Parked Vehicles", createParkedVehiclesTab());
@@ -30,7 +39,17 @@ public class ReportingPanel extends JPanel {
         tabs.addTab("Fine Report", createFineTab());
 
         add(tabs, BorderLayout.CENTER);
+
+        // ===== Refresh Logic =====
+        refreshBtn.addActionListener(e -> {
+            tabs.setComponentAt(0, createParkedVehiclesTab());
+            tabs.setComponentAt(1, createRevenueTab());
+            tabs.setComponentAt(2, createOccupancyTab());
+            tabs.setComponentAt(3, createFineTab());
+        });
+
     }
+
 
     // ===============================
     // CURRENTLY PARKED VEHICLES
