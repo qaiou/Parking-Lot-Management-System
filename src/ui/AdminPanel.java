@@ -68,7 +68,7 @@ public class AdminPanel extends JPanel {
         panel.add(btnApply);
         
         // REFRESH BUTTON - Now refreshes both occupancy AND parking grid
-        JButton btnRefresh = new JButton("🔄 Refresh All Data");
+        JButton btnRefresh = new JButton("Refresh All Data");
         btnRefresh.setFont(new Font("Arial", Font.BOLD, 12));
         btnRefresh.addActionListener(e -> {
             updateOccupancyDisplay();
@@ -234,5 +234,5 @@ public class AdminPanel extends JPanel {
 
         return spotBtn;
     }
-    
+
 }
