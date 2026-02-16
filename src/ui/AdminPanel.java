@@ -19,8 +19,6 @@ import model.Vehicle;
 
 public class AdminPanel extends JPanel {
 
-    private final int TOTSPOTS = 144; 
-
     private JLabel occupancyLabel;
     private JLabel revenueLabel;
     private JTable finesTable;
@@ -96,7 +94,7 @@ public class AdminPanel extends JPanel {
         panel.add(btnApply);
         
         // UPDATED REFRESH BUTTON: Synchronizes all UI components
-        JButton btnRefresh = new JButton("🔄 Refresh All Data");
+        JButton btnRefresh = new JButton("Refresh All Data");
         btnRefresh.setFont(new Font("Arial", Font.BOLD, 12));
         btnRefresh.addActionListener(e -> {
             updateOccupancyDisplay();

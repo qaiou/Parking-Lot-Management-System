@@ -224,6 +224,7 @@ public class EntryExitPanel extends JPanel {
                 return;
             }
 
+            /* */
             // Find Vehicle
             ParkingSpot spot = parkingLot.findVehicleSpot(plate);
             if (spot == null) {
@@ -279,7 +280,6 @@ public class EntryExitPanel extends JPanel {
             String method = (String) paymentMethodBox.getSelectedItem();
 
             // 1. Call Controller to apply Strategy Pattern for Fines
-            // (Friend's code: processExit calculates fine, updates revenue, clears DB)
             PaymentAndFine receipt = controller.processExit(currentPlate, currentUsageFee, currentDurationHours, method);
 
             // 2. Remove Vehicle from ParkingLot
@@ -299,7 +299,7 @@ public class EntryExitPanel extends JPanel {
             
             billArea.setText(sb.toString());
 
-            JOptionPane.showMessageDialog(this, "Payment Successful! Gate Opening...");
+            JOptionPane.showMessageDialog(this, "Payment Successful!");
             
             // Reset fields
             exitPlate.setText("");
@@ -359,7 +359,7 @@ public class EntryExitPanel extends JPanel {
                     entryPlate.setText("");
                 } else {
                     JOptionPane.showMessageDialog(this, 
-                        "Failed to park. Spot rules violation (e.g. SUV in Compact).", 
+                        "Failed to park. Spot rules violation.", 
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
