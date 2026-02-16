@@ -1,83 +1,90 @@
-package model; // nura
+package model;
 
 /**
  * Represents a single parking spot in the parking lot.
- * Each spot has a unique ID, type, status, hourly rate, and may contain a vehicle.
- * 
- * This class implements the core data structure for Requirement #1: Parking Lot Structure
- * - Spot ID (e.g., "F1-R1-S1")
- * - Type (compact, regular, handicapped, reserved)
- * - Status (available or occupied)
- * - Current vehicle (if occupied)
- * - Hourly rate (varies by type)
+ * Stores the specific Vehicle object when occupied and enforces parking rules.
  */
 public class ParkingSpot {
     
-    // Spot properties as per requirement
-    private String spotId;          // Format: "F1-R1-S1" (Floor-Row-Spot)
-    private SpotType type;          // Type of parking spot
-    private boolean isOccupied;     // Status: true = occupied, false = available
-    private String currentVehiclePlate;  // License plate of parked vehicle (null if empty)
-    private double hourlyRate;      // Rate varies by spot type
+    private String spotId;          
+    private SpotType type;          
+    private boolean isOccupied;     
+    private Vehicle currentVehicle; // Stores the actual Vehicle object
+    private double hourlyRate;      
     
-    /**
-     * Constructor to initialize a parking spot
-     * @param spotId Unique identifier in format "F1-R1-S1"
-     * @param type Type of parking spot (COMPACT, REGULAR, HANDICAPPED, RESERVED)
-     */
     public ParkingSpot(String spotId, SpotType type) {
         this.spotId = spotId;
         this.type = type;
-        this.isOccupied = false;  // Initially all spots are available
-        this.currentVehiclePlate = null;  // No vehicle initially
-        this.hourlyRate = type.getRate();  // Set rate based on type
+        this.isOccupied = false;
+        this.currentVehicle = null;
+        this.hourlyRate = type.getRate(); 
     }
     
     /**
-     * Marks this spot as occupied by a vehicle
-     * @param vehiclePlate License plate of the vehicle parking here
-     * @return true if successfully occupied, false if already occupied
+     * Tries to park a vehicle in this spot.
+     * Enforces strict rules about which vehicles can park in which spot types.
+     * * @param vehicle The Vehicle object to park.
+     * @return true if successful, false if rule violation or spot occupied.
      */
-    public boolean occupySpot(String vehiclePlate) {
+    public boolean occupySpot(Vehicle vehicle) {
         if (isOccupied) {
-            return false;  // Cannot occupy an already occupied spot
+            return false;
         }
+
+        // --- DEFENSIVE CHECKS (Validation) ---
+        
+        // Rule 1: Only Handicapped Vehicles can use Handicapped Spots
+        // (Note: Handicapped vehicles can park elsewhere, but normal cars can't park here)
+        if (this.type == SpotType.HANDICAPPED && !vehicle.getType().equals("Handicapped Vehicle")) {
+            return false;
+        }
+
+        // Rule 2: Only Electric Vehicles can use Electric Spots
+        if (this.type == SpotType.ELECTRIC && !vehicle.getType().equals("Electric Vehicle")) {
+            return false;
+        }
+
+        // Rule 3: Motorcycles can ONLY use Compact spots
+        if (vehicle.getType().equals("Motorcycle") && this.type != SpotType.COMPACT) {
+             return false;
+        }
+
+        // Rule 4: SUVs/Trucks CANNOT use Compact spots (Too big)
+        if (vehicle.getType().equals("SUV/Truck") && this.type == SpotType.COMPACT) {
+            return false;
+        }
+
+        // --- END CHECKS ---
+
         this.isOccupied = true;
-        this.currentVehiclePlate = vehiclePlate;
+        this.currentVehicle = vehicle;
         return true;
     }
     
     /**
-     * Marks this spot as available (vehicle has left)
-     * @return The plate number of the vehicle that left
+     * Removes the vehicle from this spot.
+     * @return The Vehicle object that was removed (useful for calculating fees).
      */
-    public String releaseSpot() {
-        String leavingVehicle = this.currentVehiclePlate;
+    public Vehicle releaseSpot() {
+        Vehicle leavingVehicle = this.currentVehicle;
         this.isOccupied = false;
-        this.currentVehiclePlate = null;
+        this.currentVehicle = null;
         return leavingVehicle;
     }
     
-    /**
-     * Checks if this spot is available for parking
-     * @return true if available, false if occupied
-     */
     public boolean isAvailable() {
         return !isOccupied;
     }
     
-    /**
-     * Gets the status as a string for display
-     * @return "Available" or "Occupied by [plate]"
-     */
     public String getStatusDisplay() {
-        if (isOccupied) {
-            return "Occupied by " + currentVehiclePlate;
+        if (isOccupied && currentVehicle != null) {
+            return "Occupied by " + currentVehicle.getPlateNumber();
         }
         return "Available";
     }
     
-    // Getters for all properties
+    // --- Getters ---
+
     public String getSpotId() {
         return spotId;
     }
@@ -90,18 +97,24 @@ public class ParkingSpot {
         return isOccupied;
     }
     
-    public String getCurrentVehiclePlate() {
-        return currentVehiclePlate;
+    public Vehicle getCurrentVehicle() {
+        return currentVehicle;
     }
     
+    /**
+     * Helper to get the plate number safely (returns null if empty).
+     */
+    public String getCurrentVehiclePlate() {
+        if (currentVehicle != null) {
+            return currentVehicle.getPlateNumber();
+        }
+        return null;
+    }
+
     public double getHourlyRate() {
         return hourlyRate;
     }
     
-    /**
-     * Gets the type name as string for display
-     * @return Type name (e.g., "Compact", "Regular")
-     */
     public String getTypeName() {
         return type.getDisplayName();
     }
