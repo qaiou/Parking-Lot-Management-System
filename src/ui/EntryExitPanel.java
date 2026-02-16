@@ -32,6 +32,7 @@ public class EntryExitPanel extends JPanel {
     private String currentSpotId = "";
 
     public EntryExitPanel(PaymentAndFineController controller) {
+        
         this.controller = controller;
         this.parkingLot = ParkingLot.getInstance();
         
@@ -190,6 +191,8 @@ public class EntryExitPanel extends JPanel {
 
     // ---------------- EXIT TAB ----------------
     private JPanel exitPanel() {
+        int allowedHours = 24; 
+        int overstay = Math.max(0, currentDurationHours - allowedHours);
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -282,7 +285,7 @@ public class EntryExitPanel extends JPanel {
             String method = (String) paymentMethodBox.getSelectedItem();
 
             // 1. Call Controller to apply Strategy Pattern for Fines
-            PaymentAndFine receipt = controller.processExit(currentPlate, currentUsageFee, currentDurationHours, method);
+            PaymentAndFine receipt = controller.processExit(currentPlate, currentUsageFee, overstay, method);
 
             // 2. Remove Vehicle from ParkingLot
             parkingLot.removeVehicle(currentSpotId);
