@@ -1,25 +1,31 @@
 package model;
 
+import dao.VehicleDAO;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Main ParkingLot class that manages the entire parking lot system.
  * Implements Singleton pattern to ensure only one parking lot exists.
+ * Now integrated with VehicleDAO for data persistence.
  */
 public class ParkingLot {
     
     private static ParkingLot instance; 
     private List<Floor> floors;
     private int totalFloors;
-    
+    private VehicleDAO vehicleDao;
+
     /**
      * Private constructor for Singleton
      */
     private ParkingLot(int numberOfFloors) {
         this.totalFloors = numberOfFloors;
         this.floors = new ArrayList<>();
+        this.vehicleDao = new VehicleDAO();
         initializeFloors();
+        loadPersistedVehicles(); // Reloads existing data from the database on startup
     }
     
     /**
@@ -44,49 +50,69 @@ public class ParkingLot {
             floors.add(new Floor(i));
         }
     }
+
+    /**
+     * Internal method to reload vehicles from the database into the memory model.
+     */
+    private void loadPersistedVehicles() {
+        Map<String, Vehicle> savedVehicles = vehicleDao.loadAllVehicles();
+        for (Map.Entry<String, Vehicle> entry : savedVehicles.entrySet()) {
+            String spotId = entry.getKey();
+            Vehicle vehicle = entry.getValue();
+            
+            ParkingSpot spot = findSpotById(spotId);
+            if (spot != null) {
+                // Directly occupy the spot to restore the state
+                spot.occupySpot(vehicle);
+            }
+        }
+    }
     
     // --- Core Functionality ---
 
     /**
      * Park a vehicle in a specific spot.
-     * Delegates validation to ParkingSpot.occupySpot().
-     * @param spotId The ID of the spot (e.g., "F1-R1-S1")
-     * @param vehicle The Vehicle object to park
-     * @return true if successful, false if spot occupied or type mismatch
+     * Delegates validation to ParkingSpot.occupySpot() and saves to database.
      */
     public boolean parkVehicle(String spotId, Vehicle vehicle) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null) {
             return false; 
         }
-        return spot.occupySpot(vehicle);
+        
+        boolean success = spot.occupySpot(vehicle);
+        if (success) {
+            vehicleDao.saveVehicle(vehicle, spotId); // Persistence: Save to DB
+        }
+        return success;
     }
     
     /**
-     * Remove a vehicle from a specific spot.
-     * @param spotId The ID of the spot
-     * @return The Vehicle object that left (needed for billing)
+     * Remove a vehicle from a specific spot and removes it from the database.
      */
     public Vehicle removeVehicle(String spotId) {
         ParkingSpot spot = findSpotById(spotId);
         if (spot == null || spot.isAvailable()) {
             return null;
         }
-        return spot.releaseSpot();
+        
+        Vehicle vehicle = spot.releaseSpot();
+        if (vehicle != null) {
+            vehicleDao.removeVehicle(spotId); // Persistence: Remove from DB
+        }
+        return vehicle;
     }
     
     // --- Search & Retrieval Methods ---
 
     public ParkingSpot findSpotById(String spotId) {
         try {
-            // Assumes ID format F1-R1-S1. Parses "1" from "F1"
             int floorNum = Integer.parseInt(spotId.substring(1, spotId.indexOf('-')));
             Floor floor = getFloor(floorNum);
             if (floor != null) {
                 return floor.getSpotById(spotId);
             }
         } catch (Exception e) {
-            // Handle invalid ID formats gracefully
             return null;
         }
         return null;
@@ -100,10 +126,6 @@ public class ParkingLot {
         return availableSpots;
     }
     
-    /**
-     * Finds the spot containing a specific vehicle plate.
-     * Useful for Exit Panel when user only enters plate number.
-     */
     public ParkingSpot findVehicleSpot(String vehiclePlate) {
         for (Floor floor : floors) {
             for (ParkingSpot spot : floor.getAllSpots()) {
@@ -117,10 +139,6 @@ public class ParkingLot {
         return null;
     }
 
-    /**
-     * CRITICAL FOR ADMIN PANEL: Retrieves all currently parked vehicles.
-     * Used to populate the "Parked Vehicles" table.
-     */
     public List<Vehicle> getAllParkedVehicles() {
         List<Vehicle> allVehicles = new ArrayList<>();
         for (Floor floor : floors) {
