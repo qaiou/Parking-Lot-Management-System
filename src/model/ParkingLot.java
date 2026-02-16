@@ -93,7 +93,7 @@ public class ParkingLot {
     }
     
     //Finds the spot containing a specific vehicle plate.
-     for Exit Panel when user only enters plate number.
+     //for Exit Panel when user only enters plate number.
      
     public ParkingSpot findVehicleSpot(String vehiclePlate) {
         for (Floor floor : floors) {
