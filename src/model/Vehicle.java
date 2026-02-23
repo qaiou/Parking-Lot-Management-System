@@ -20,6 +20,10 @@ public abstract class Vehicle {
         return entryTime;
     }
 
+    public void setEntryTime(LocalDateTime entryTime) {
+        this.entryTime = entryTime;
+    }
+
     public void setTicket(Ticket ticket) {
         this.ticket = ticket;
     }

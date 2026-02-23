@@ -1,6 +1,7 @@
 package dao;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,8 +63,19 @@ public class VehicleDAO {
                 String plate = rs.getString("plate_number");
                 String type = rs.getString("vehicle_type");
                 String spotId = rs.getString("spot_id");
+                String entryTimeStr = rs.getString("entry_time");
                 
                 Vehicle v = createVehicle(plate, type);
+                
+                // Restore the entry time from database
+                if (entryTimeStr != null && !entryTimeStr.isEmpty()) {
+                    try {
+                        v.setEntryTime(LocalDateTime.parse(entryTimeStr));
+                    } catch (Exception e) {
+                        System.err.println("Failed to parse entry_time: " + entryTimeStr);
+                    }
+                }
+                
                 parkedVehicles.put(spotId, v);
             }
         } catch (SQLException e) {

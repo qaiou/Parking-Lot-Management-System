@@ -243,8 +243,9 @@ public class EntryExitPanel extends JPanel {
                 return;
             }
 
-            // Calculate Duration
-            LocalDateTime entryTime = v.getEntryTime();
+            // Calculate Duration using Ticket's entry time (correct entry moment)
+            Ticket ticket = v.getTicket();
+            LocalDateTime entryTime = ticket.getEntryTime();
             LocalDateTime exitTime = LocalDateTime.now();
             Duration dur = Duration.between(entryTime, exitTime);
             long hours = (long) Math.ceil(dur.toMinutes() / 60.0);
@@ -327,7 +328,7 @@ public class EntryExitPanel extends JPanel {
         spotBtn.setBackground(new Color(0, 150, 0)); // Green for available
         spotBtn.setForeground(Color.WHITE);
         spotBtn.setFont(new Font("Arial", Font.PLAIN, 10));
-
+        
         spotBtn.add(new JLabel(spot.getSpotId(), JLabel.CENTER));
         spotBtn.add(new JLabel(spot.getTypeName(), JLabel.CENTER));
         spotBtn.add(new JLabel("Available", JLabel.CENTER));

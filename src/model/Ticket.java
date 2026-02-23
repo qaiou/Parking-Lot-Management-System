@@ -37,6 +37,12 @@ public class Ticket {
         return entryTime;
     }
 
+    public void setEntryTime(LocalDateTime entryTime) {
+        this.entryTime = entryTime;
+        // Regenerate ticket ID with the correct entry time
+        this.ticketId = generateTicketId();
+    }
+
     @Override
     public String toString() {
         return ticketId;

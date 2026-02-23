@@ -63,6 +63,8 @@ public class ParkingLot {
             
             // Re-assign a valid Ticket to the loaded vehicle
             Ticket ticket = new Ticket(vehicle.getPlateNumber(), spotId);
+            // Restore the entry time from the vehicle (loaded from database)
+            ticket.setEntryTime(vehicle.getEntryTime());
             vehicle.setTicket(ticket);
             
             ParkingSpot spot = findSpotById(spotId);

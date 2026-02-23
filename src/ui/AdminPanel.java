@@ -208,11 +208,12 @@ public class AdminPanel extends JPanel {
         for (Vehicle v : vehicles) {
             String plate = v.getPlateNumber();
             String type = v.getType();
-            String time = v.getEntryTime().format(formatter);
             
             Ticket t = v.getTicket();
             String ticketId = (t != null) ? t.getTicketId() : "N/A";
             String spotId = (t != null) ? t.getSpotId() : "Unknown";
+            // Use Ticket's entry time instead of Vehicle's entry time
+            String time = (t != null && t.getEntryTime() != null) ? t.getEntryTime().format(formatter) : "N/A";
             
             parkedVehiclesModel.addRow(new Object[]{plate, type, spotId, time, ticketId});
         }

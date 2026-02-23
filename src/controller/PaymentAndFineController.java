@@ -7,12 +7,14 @@ public class PaymentAndFineController {
     private FineCalculator fineCalculator;
     private FineDAO fineDAO;
     private double totalRevenue;
+    private PaymentDAO paymentDAO;
 
     public PaymentAndFineController() {
         // Default fine strategy is FixedFine
         this.fineCalculator = new FineCalculator(new FixedFine());
         this.fineDAO = new FineDAO();
-        this.totalRevenue = 0.0;
+        this.paymentDAO = new PaymentDAO();
+        this.totalRevenue = paymentDAO.getTotalRevenue();
     }
 
     // Switch fine strategy dynamically
